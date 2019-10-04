@@ -1,0 +1,224 @@
+---
+title: "Transitions analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Raw data of counts of each cluster at each time point
+
+```{r}
+nf=8
+nams=c("E1",	"E2",	"E3",	"pEMT1",	"pEMT2",	"pEMT3",	"M","pMET")
+
+#  Data Set 1, with rowsum normalized to 10,0000
+r0 = c(4417, 2240, 2080, 645, 137, 333, 105, 43)
+r1 = c(158, 1730, 1145, 2932, 939, 2268, 670, 157)
+r2 = c(8, 162, 128, 842, 1835, 2092, 4653, 280)
+r3 = c(2, 32, 12, 283, 909, 1147, 7285, 330)
+r4 = c(27, 111, 9, 838, 1532, 165, 3826, 3492)
+r5 = c(216, 1107, 28, 1365, 1043, 301, 4156, 1785)
+r6 = c(1085, 2470, 53, 1027, 783, 198, 2240, 2144)
+
+
+rcount1 = t(rbind(r0,r1,r2,r3,r4,r5,r6))
+
+dimnames(rcount1)=list(nams,c("0","2","6","10","w2","w6","w10"))
+
+rprop1=scale(rcount1,F,colSums(rcount1))  #make colsums equal to 1
+
+```
+
+
+
+
+
+```{r results=FALSE, warning=FALSE, message=FALSE}
+library("tidyverse")
+library("wesanderson")
+```
+
+
+
+# Load in results from bootstrap simulations
+
+```{r}
+boot_files <- file.path("boot_samples", list.files(path="boot_samples", pattern="boot_res"))
+boot_list <- lapply(boot_files, readRDS)
+```
+
+```{r}
+lambdas_1se <- sapply(boot_list, function(x) x$lambda_1se)
+```
+
+```{r}
+nnzeros_p1 <- sapply(boot_list, function(x) sum(x$train_res$post_res$transition_P[[1]] >=10^(-4)))
+nnzeros_p2 <- sapply(boot_list, function(x) sum(x$train_res$post_res$transition_P[[2]] >=10^(-4)))
+
+lambda_cv_nnzero_df <- rbind(data.frame(lambda=lambdas_1se, nnzeros = nnzeros_p1, transition="P1"), 
+                             data.frame(lambda=lambdas_1se, nnzeros = nnzeros_p2, transition="P2"))
+```
+
+
+# Plot of number of nonzeros for the two estimated transition matrices versus chosen regularization parameter (each point represents one bootstrap replication)
+
+```{r fi.width=10}
+ggplot(lambda_cv_nnzero_df, aes(x=lambda, y=nnzeros)) + geom_jitter() + theme_bw() + facet_grid(.~transition)
+```
+
+
+
+```{r}
+df_boot <- data.frame()
+K_clusters <- 8
+for (i in 1:K_clusters){
+  for (j in 1:K_clusters){
+    #if (diff_P1_P2_sparsity[i,j] == 1){
+      p1_samples <- sapply(boot_list, function(u) u$train_res$post_res$transition_P[[1]][i,j])
+      p2_samples <- sapply(boot_list, function(u) u$train_res$post_res$transition_P[[2]][i,j])
+      df_boot <- rbind(df_boot,
+                       data.frame(P1=p1_samples,
+                                  P2=p2_samples,
+                                  to=nams[i], 
+                                  from=nams[j], 
+                                  boot_id = 1:length(boot_list)))
+  }
+}
+    
+    
+```
+
+
+```{r}
+df_boot_m <- gather(df_boot, transition, probability, -c(to,from,boot_id)) 
+
+stage_cluster_levels <-  unlist(lapply(unique(df_boot_m$to), function(x) paste0(x, c(" (P1)"," (P2)"))))
+
+df_boot_m <- mutate(df_boot_m, to_stage = paste0(to, " (",transition,")")) %>% 
+             mutate(to_stage=factor(to_stage,levels=stage_cluster_levels)) %>%
+             mutate(from = factor(from, levels=levels(to))) 
+
+df_boot_m_from <- mutate(df_boot_m, from= factor(paste0( "from: ", from), levels=paste0("from: ", levels(from))))
+df_boot_m_to <-  mutate(df_boot_m, to= factor(paste0( "to: ", to), levels=paste0("to: ", levels(to))))
+```
+
+```{r}
+# sanity check:
+group_by(df_boot_m_from, from, boot_id, transition) %>%
+             summarize(sum_prob = sum(probability)) %>% 
+             pull(sum_prob) %>%
+             range
+```
+
+# Bootstrap results
+
+```{r fig.width=12,fig.height=7}
+p_boot <- ggplot(df_boot_m_from, aes(x=to, y=probability,fill=transition)) + geom_boxplot() + 
+  facet_wrap(~from,ncol=2, scales="free_y") + theme_bw(base_size=14) + 
+  scale_fill_manual(values=wes_palette(n=2,name="Chevalier1"))+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+p_boot
+```
+
+```{r eval=FALSE}
+ggsave("bootstrap_plot.pdf", p_boot, width=12, height=7)
+```
+
+## Now also transpose, i.e. show to->from
+
+```{r fig.width=12,fig.height=7}
+ggplot(df_boot_m_to, aes(x=from, y=probability,fill=transition)) + geom_boxplot() + 
+  facet_wrap(~to,ncol=2, scales="free_y") + theme_bw(base_size=14) + 
+  scale_fill_manual(values=wes_palette(n=2,name="Chevalier1"))+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
+## Now generate graphs
+
+
+```{r results=FALSE, warning=FALSE, message=FALSE}
+library(igraph)
+library(ggraph)
+set_graph_style(plot_margin = margin(3,3,3,3))
+```
+
+```{r}
+library(cowplot)
+```
+
+```{r}
+# function that plots the graph
+plot_adjacency <- function(mat, cutoff=10^{-3}){
+
+  Net1 <- graph_from_adjacency_matrix(t(mat*(mat  > cutoff)),
+                                      mode="directed",
+                                      weighted=TRUE)
+
+  E(Net1)$pretty_weight <- as.character(round(edge_attr(Net1)$weight,3))
+  for (i in 1:length(E(Net1))){
+    E_tmp = E(Net1)[i]
+    if (ends(Net1,E_tmp)[1] ==  ends(Net1,E_tmp)[2]){
+      E(Net1)$pretty_weight[i] = ""
+    }
+  }
+
+
+  cluster_layout <- as.data.frame( rbind( c(1,2),
+                                          c(0.75,1),
+                                          c(1,0),
+                                          c(2.25,2.5),
+                                          c(2,1),
+                                          c(2.25,-0.5),
+                                          c(3,1.75),
+                                          c(3.5,0.5)))
+  colnames(cluster_layout) <- c("x","y")
+
+
+
+  ggraph(Net1, layout= cluster_layout) +
+    geom_edge_fan(aes(end_cap = circle(5.5, 'mm'), label=pretty_weight),
+                  angle_calc = 'along',
+                  label_dodge = unit(2.5, 'mm'),
+                  arrow =  arrow(length = unit(6, "pt"), type = "closed")) +
+    geom_node_label(aes(label = name))
+}
+```
+
+# Find medoids and plot graph
+```{r}
+n_boot <- length(boot_files)
+dist_mat <- matrix(NA, n_boot, n_boot)
+for (i in 1:(n_boot-1)){
+  for (j in (i+1):n_boot){
+    P_i_1 <- boot_list[[i]]$train_res$post_res$transition_P[[1]]
+    P_i_2 <- boot_list[[i]]$train_res$post_res$transition_P[[2]]
+    P_j_1 <- boot_list[[j]]$train_res$post_res$transition_P[[1]]
+    P_j_2 <- boot_list[[j]]$train_res$post_res$transition_P[[2]]
+    dist_mat[i,j] <- sum( abs(P_i_1 - P_j_1) + abs(P_i_2 - P_j_2))
+    dist_mat[j,i] <- dist_mat[i,j]
+  }
+}
+
+score_vec <- sapply( 1:n_boot, function(i) sum(dist_mat[i,], na.rm=TRUE))
+idx_medoid <- which.min(score_vec)
+P1_medoid_L1 <- boot_list[[idx_medoid]]$train_res$post_res$transition_P[[1]]
+P2_medoid_L1 <- boot_list[[idx_medoid]]$train_res$post_res$transition_P[[2]]
+```
+
+
+
+
+```{r fig.width=17, fig.height=7}
+plot_grid( plot_adjacency(P1_medoid_L1, cutoff=0.01), 
+           plot_adjacency(P2_medoid_L1, cutoff=0.01),
+           nrow=1)
+```
+
+# Session information
+
+```{r}
+sessionInfo()
+```
