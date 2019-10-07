@@ -19,14 +19,14 @@ run_lambda_split_grid <- function(rcount, nseeds =2, lambdas= c( 0, round(10^seq
       res_l <- alternating_minim_light(spl$rcount_left, lambda=lambdas[i], post_fit = TRUE, max_iter=4)
       res_r <- alternating_minim_light(spl$rcount_right,lambda=lambdas[i], post_fit = TRUE, max_iter=4)
 
-      res_df <-  rbind(data.frame(split=1, desparsified=FALSE, predict_mode="one step",  error= predict_one_step2(res_l, spl$rcount_right, wts= wts,desparsified=FALSE)),
-                       data.frame(split=1, desparsified=TRUE, predict_mode="one step", error= predict_one_step2(res_l, spl$rcount_right, wts= wts, desparsified=TRUE)),
-                       data.frame(split=2, desparsified=FALSE, predict_mode="one step", error= predict_one_step2(res_r, spl$rcount_left, wts= wts,desparsified=FALSE)),
-                       data.frame(split=2, desparsified=TRUE, predict_mode="one step", error= predict_one_step2(res_r, spl$rcount_left, wts= wts, desparsified=TRUE)),
-                       data.frame(split=1, desparsified=FALSE, predict_mode="full forward",  error=full_forward_pass2(res_l, spl$rcount_right, wts= wts,desparsified=FALSE)),
-                       data.frame(split=1, desparsified=TRUE, predict_mode="full forward",  error=full_forward_pass2(res_l, spl$rcount_right, wts= wts, desparsified=TRUE)),
-                       data.frame(split=2, desparsified=FALSE, predict_mode="full forward", error=full_forward_pass2(res_r, spl$rcount_left, wts= wts,desparsified=FALSE)),
-                       data.frame(split=2, desparsified=TRUE, predict_mode="full forward", error=full_forward_pass2(res_r, spl$rcount_left, wts= wts, desparsified=TRUE)))
+      res_df <-  rbind(data.frame(split=1, desparsified=FALSE, predict_mode="one step",  error= predict_one_step(res_l, spl$rcount_right, wts= wts,desparsified=FALSE)),
+                       data.frame(split=1, desparsified=TRUE, predict_mode="one step", error= predict_one_step(res_l, spl$rcount_right, wts= wts, desparsified=TRUE)),
+                       data.frame(split=2, desparsified=FALSE, predict_mode="one step", error= predict_one_step(res_r, spl$rcount_left, wts= wts,desparsified=FALSE)),
+                       data.frame(split=2, desparsified=TRUE, predict_mode="one step", error= predict_one_step(res_r, spl$rcount_left, wts= wts, desparsified=TRUE)),
+                       data.frame(split=1, desparsified=FALSE, predict_mode="full forward",  error=full_forward_pass(res_l, spl$rcount_right, wts= wts,desparsified=FALSE)),
+                       data.frame(split=1, desparsified=TRUE, predict_mode="full forward",  error=full_forward_pass(res_l, spl$rcount_right, wts= wts, desparsified=TRUE)),
+                       data.frame(split=2, desparsified=FALSE, predict_mode="full forward", error=full_forward_pass(res_r, spl$rcount_left, wts= wts,desparsified=FALSE)),
+                       data.frame(split=2, desparsified=TRUE, predict_mode="full forward", error=full_forward_pass(res_r, spl$rcount_left, wts= wts, desparsified=TRUE)))
 
       res_df <- dplyr::mutate(res_df, seed_idx=seed_idx, lambda=lambdas[i])
       res_res <- list(res_l=res_l,res_r=res_r,res_df=res_df, spl=spl) # just to have it available
