@@ -102,7 +102,7 @@ boot_run <- function(rcount, seed_idx, sampling="column multinomial", nseeds_cv=
   lambda_1se <- max(lambda_cv_df_filt$lambda)
 
 
-  train_res <- alternating_minim_light(cv_test_split$rcount_right, lambda=lambda_1se, post_fit = TRUE, max_iter=10)
+  train_res <- alternating_minim_light(cv_test_split$rcount_right, lambda=lambda_1se, post_fit = TRUE, max_iter=7)
 
   list(count_pois=count_pois, cv_test_split=cv_test_split,
        train_res=train_res, cv_res_list=cv_res_list,

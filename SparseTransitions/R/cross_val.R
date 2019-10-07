@@ -16,8 +16,8 @@ run_lambda_split_grid <- function(rcount, nseeds =2, lambdas= c( 0, round(10^seq
       wts <- 1/pmax(total_cts,2)
       wts <- wts/sum(wts)*length(wts)
 
-      res_l <- alternating_minim_light(spl$rcount_left, lambda=lambdas[i], post_fit = TRUE, max_iter=4)
-      res_r <- alternating_minim_light(spl$rcount_right,lambda=lambdas[i], post_fit = TRUE, max_iter=4)
+      res_l <- alternating_minim_light(spl$rcount_left, lambda=lambdas[i], post_fit = TRUE, max_iter=7)
+      res_r <- alternating_minim_light(spl$rcount_right,lambda=lambdas[i], post_fit = TRUE, max_iter=7)
 
       res_df <-  rbind(data.frame(split=1, desparsified=FALSE, predict_mode="one step",  error= predict_one_step(res_l, spl$rcount_right, wts= wts,desparsified=FALSE)),
                        data.frame(split=1, desparsified=TRUE, predict_mode="one step", error= predict_one_step(res_l, spl$rcount_right, wts= wts, desparsified=TRUE)),
