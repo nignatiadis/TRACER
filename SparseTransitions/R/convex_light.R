@@ -4,8 +4,10 @@ jl_pkg_setup <- function (...){
 }
 
 
-alternating_minim_light <- function(rcount, max_iter=7, lambda=0.1, weighted = TRUE,
+alternating_minim_light <- function(rcount, max_iter=7L, lambda=0.1, weighted = TRUE,
                                      post_fit=TRUE, t_cutoff=10^(-4)){
+
+  max_iter <- as.integer(max_iter)
 
   JuliaCall::julia_assign("rcount",rcount)
   JuliaCall::julia_assign("max_iter", max_iter)
