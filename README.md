@@ -41,10 +41,10 @@ library(SparseTransitions)
 jl_pkg_setup('/Applications/Julia-1.2.app/Contents/Resources/julia/bin')
 ```
 
-You might have to change the last line from above, to match your own Julia installation. See the corresponding documentation file from `JuliaCall`, e.g. ?jl_pkg_setup for instructions on how to do this.
+You might have to change the last line from above, to match your own Julia installation. See the corresponding documentation file from `JuliaCall`, e.g. `?jl_pkg_setup` for instructions on how to do this.
 
 
-Finally, run the file "vignette/julia_boot_sampling.R", i.e. make sure your working directory is the "vignette" folder and execute:
+Finally, run the file "vignette/julia_boot_sampling.R", i.e., make sure your working directory is the "vignette" folder and execute:
 
 ```
 source("julia_boot_sampling.R")
@@ -54,11 +54,10 @@ This generates all results from the bootstrap sampling and now you can proceed t
 
 ## Software versions
 This has been tested with the following versions, although it should work with other versions too.
-
-Julia 1.2 (Julia packages: Gurobi.jl v0.7.2, JuMP.jl v0.18.6)
-R 3.6.1
-Gurobi 8.1.0
-RStudio 1.2.5001
+- Julia 1.2 (Julia packages: Gurobi.jl v0.7.2, JuMP.jl v0.18.6)
+- Gurobi 8.1.0
+- R 3.6.1
+- RStudio 1.2.5001
 
 
 
